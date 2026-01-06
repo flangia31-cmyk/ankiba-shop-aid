@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useBusiness } from '@/hooks/useBusiness';
@@ -25,7 +25,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Trash2, Loader2, Plus } from 'lucide-react';
+import { ArrowLeft, Trash2, Loader2, Plus, Camera, X } from 'lucide-react';
 
 interface Category {
   id: string;
@@ -37,6 +37,7 @@ export default function ProductForm() {
   const { id } = useParams();
   const { business } = useBusiness();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const isEditing = Boolean(id);
   
@@ -51,6 +52,9 @@ export default function ProductForm() {
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     if (business) {
@@ -98,6 +102,67 @@ export default function ProductForm() {
     setStockQuantity(String(data.stock_quantity));
     setMinStockQuantity(String(data.min_stock_quantity));
     setCategoryId(data.category_id || '');
+    setImageUrl(data.image_url);
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "Fichier trop volumineux",
+        description: "L'image ne doit pas dépasser 5 Mo",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setImageFile(file);
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImageUrl(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const uploadImage = async (): Promise<string | null> => {
+    if (!imageFile || !business) return imageUrl;
+
+    setUploadingImage(true);
+    const fileExt = imageFile.name.split('.').pop();
+    const fileName = `${business.id}/${Date.now()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('product-images')
+      .upload(fileName, imageFile);
+
+    if (uploadError) {
+      toast({
+        title: "Erreur d'upload",
+        description: "Impossible de télécharger l'image",
+        variant: "destructive"
+      });
+      setUploadingImage(false);
+      return null;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('product-images')
+      .getPublicUrl(fileName);
+
+    setUploadingImage(false);
+    return publicUrl;
+  };
+
+  const removeImage = () => {
+    setImageUrl(null);
+    setImageFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleAddCategory = async () => {
@@ -137,6 +202,16 @@ export default function ProductForm() {
 
     setLoading(true);
 
+    // Upload image if there's a new one
+    let finalImageUrl = imageUrl;
+    if (imageFile) {
+      finalImageUrl = await uploadImage();
+      if (finalImageUrl === null && imageFile) {
+        setLoading(false);
+        return; // Upload failed
+      }
+    }
+
     const productData = {
       business_id: business.id,
       name: name.trim(),
@@ -144,7 +219,8 @@ export default function ProductForm() {
       selling_price: parseFloat(sellingPrice) || 0,
       stock_quantity: parseInt(stockQuantity) || 0,
       min_stock_quantity: parseInt(minStockQuantity) || 5,
-      category_id: categoryId || null
+      category_id: categoryId || null,
+      image_url: finalImageUrl
     };
 
     let error;
@@ -224,6 +300,47 @@ export default function ProductForm() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <Card className="border-0 shadow-md">
           <CardContent className="p-4 space-y-4">
+            {/* Image Upload */}
+            <div className="space-y-2">
+              <Label className="text-base">Photo du produit</Label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handleImageSelect}
+                className="hidden"
+              />
+              {imageUrl ? (
+                <div className="relative w-full h-48 rounded-lg overflow-hidden bg-muted">
+                  <img
+                    src={imageUrl}
+                    alt="Aperçu"
+                    className="w-full h-full object-cover"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-2 right-2"
+                    onClick={removeImage}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full h-32 border-dashed border-2 flex flex-col gap-2"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Camera className="w-8 h-8 text-muted-foreground" />
+                  <span className="text-muted-foreground">Ajouter une photo</span>
+                </Button>
+              )}
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="name" className="text-base">Nom du produit *</Label>
               <Input
