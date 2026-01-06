@@ -15,6 +15,7 @@ import Sales from "@/pages/Sales";
 import NewSale from "@/pages/NewSale";
 import Customers from "@/pages/Customers";
 import Settings from "@/pages/Settings";
+import Subscription from "@/pages/Subscription";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -67,6 +68,11 @@ const App = () => (
               <Route path="/settings" element={
                 <ProtectedRoute>
                   <Settings />
+                </ProtectedRoute>
+              } />
+              <Route path="/subscription" element={
+                <ProtectedRoute>
+                  <Subscription />
                 </ProtectedRoute>
               } />
               <Route path="*" element={<NotFound />} />
