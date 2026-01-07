@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Store, LogOut, Loader2, Save } from 'lucide-react';
+import { Store, LogOut, Loader2, Save, CreditCard, ChevronRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -115,6 +116,24 @@ export default function Settings() {
               </>
             )}
           </Button>
+        </CardContent>
+      </Card>
+
+      {/* Subscription */}
+      <Card className="border-0 shadow-md">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <CreditCard className="w-5 h-5" />
+            Abonnement
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Link to="/subscription">
+            <Button variant="outline" className="w-full h-12 justify-between">
+              Gérer mon abonnement
+              <ChevronRight className="w-5 h-5" />
+            </Button>
+          </Link>
         </CardContent>
       </Card>
 
