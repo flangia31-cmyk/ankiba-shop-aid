@@ -252,6 +252,56 @@ export type Database = {
           },
         ]
       }
+      subscriptions: {
+        Row: {
+          amount: number
+          business_id: string
+          created_at: string
+          currency: string
+          expires_at: string | null
+          id: string
+          kartapay_transaction_id: string | null
+          plan_id: string
+          started_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          business_id: string
+          created_at?: string
+          currency?: string
+          expires_at?: string | null
+          id?: string
+          kartapay_transaction_id?: string | null
+          plan_id: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          business_id?: string
+          created_at?: string
+          currency?: string
+          expires_at?: string | null
+          id?: string
+          kartapay_transaction_id?: string | null
+          plan_id?: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

@@ -1,10 +1,11 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Check, Crown } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, Check, Crown, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useBusiness } from '@/hooks/useBusiness';
 
 const plans = [
   {
@@ -55,32 +56,62 @@ const plans = [
 
 export default function Subscription() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const { business } = useBusiness();
   const [loading, setLoading] = useState<string | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<'success' | 'cancelled' | null>(null);
 
-  const handleSubscribe = async (planId: string) => {
+  // Handle return from payment
+  useEffect(() => {
+    const status = searchParams.get('status');
+    if (status === 'success') {
+      setPaymentStatus('success');
+      toast({
+        title: 'Paiement réussi !',
+        description: 'Votre abonnement est maintenant actif.',
+      });
+    } else if (status === 'cancelled') {
+      setPaymentStatus('cancelled');
+      toast({
+        title: 'Paiement annulé',
+        description: 'Vous pouvez réessayer quand vous le souhaitez.',
+        variant: 'destructive',
+      });
+    }
+  }, [searchParams, toast]);
+
+  const handleSubscribe = async (planId: string, planName: string, price: number) => {
+    if (!business) {
+      toast({
+        title: 'Erreur',
+        description: 'Veuillez vous connecter pour souscrire',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setLoading(planId);
     try {
-      // Get Kartapay auth token
-      const { data, error } = await supabase.functions.invoke('kartapay-auth');
-      
+      const { data, error } = await supabase.functions.invoke('kartapay-checkout', {
+        body: {
+          planId,
+          planName,
+          amount: price,
+          businessId: business.id,
+        },
+      });
+
       if (error || !data.success) {
-        throw new Error(data?.error || 'Erreur d\'authentification Kartapay');
+        throw new Error(data?.error || error?.message || 'Erreur lors de la création du paiement');
       }
 
-      toast({
-        title: 'Redirection vers le paiement...',
-        description: 'Vous allez être redirigé vers Kartapay',
-      });
-
-      // For now, show success - full payment integration would require Kartapay checkout API
-      console.log('Kartapay auth successful:', data);
-      
-      toast({
-        title: 'Connexion Kartapay réussie',
-        description: 'L\'intégration du paiement est en cours de configuration.',
-      });
-
+      // Redirect to Kartapay checkout
+      if (data.checkout_url) {
+        window.location.href = data.checkout_url;
+      } else {
+        throw new Error('URL de paiement non reçue');
+      }
     } catch (error: any) {
       console.error('Subscription error:', error);
       toast({
@@ -88,10 +119,47 @@ export default function Subscription() {
         description: error.message || 'Une erreur est survenue',
         variant: 'destructive',
       });
-    } finally {
       setLoading(null);
     }
   };
+
+  if (paymentStatus === 'success') {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="max-w-md w-full text-center">
+          <CardContent className="pt-6 space-y-4">
+            <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
+            <h2 className="text-2xl font-bold">Paiement réussi !</h2>
+            <p className="text-muted-foreground">
+              Votre abonnement est maintenant actif. Profitez de toutes les fonctionnalités !
+            </p>
+            <Button onClick={() => navigate('/dashboard')} className="w-full">
+              Retour au tableau de bord
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (paymentStatus === 'cancelled') {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="max-w-md w-full text-center">
+          <CardContent className="pt-6 space-y-4">
+            <XCircle className="h-16 w-16 text-destructive mx-auto" />
+            <h2 className="text-2xl font-bold">Paiement annulé</h2>
+            <p className="text-muted-foreground">
+              Votre paiement a été annulé. Vous pouvez réessayer quand vous le souhaitez.
+            </p>
+            <Button onClick={() => setPaymentStatus(null)} className="w-full">
+              Voir les plans
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -150,10 +218,17 @@ export default function Subscription() {
                 <Button 
                   className="w-full" 
                   variant={plan.popular ? 'default' : 'outline'}
-                  onClick={() => handleSubscribe(plan.id)}
+                  onClick={() => handleSubscribe(plan.id, plan.name, plan.price)}
                   disabled={loading !== null}
                 >
-                  {loading === plan.id ? 'Chargement...' : 'Choisir ce plan'}
+                  {loading === plan.id ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Chargement...
+                    </>
+                  ) : (
+                    'Choisir ce plan'
+                  )}
                 </Button>
               </CardContent>
             </Card>
