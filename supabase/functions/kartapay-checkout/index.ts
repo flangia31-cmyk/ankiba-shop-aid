@@ -12,6 +12,33 @@ serve(async (req) => {
   }
 
   try {
+    // Validate JWT manually
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
+    
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    })
+
+    const token = authHeader.replace('Bearer ', '')
+    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getUser(token)
+    
+    if (claimsError || !claimsData?.user) {
+      console.error('Auth error:', claimsError)
+      return new Response(
+        JSON.stringify({ success: false, error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     const { planId, planName, amount, businessId } = await req.json()
 
     if (!planId || !amount || !businessId) {
@@ -21,7 +48,6 @@ serve(async (req) => {
     const clientId = Deno.env.get('KARTAPAY_CLIENT_ID')
     const clientSecret = Deno.env.get('KARTAPAY_CLIENT_SECRET')
     const merchantId = Deno.env.get('KARTAPAY_MERCHANT_ID')
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
     if (!clientId || !clientSecret || !merchantId) {

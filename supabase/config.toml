@@ -4,7 +4,7 @@ project_id = "lkcjxuiysqxhwwrchabv"
 verify_jwt = false
 
 [functions.kartapay-checkout]
-verify_jwt = true
+verify_jwt = false
 
 [functions.kartapay-webhook]
 verify_jwt = false
