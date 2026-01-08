@@ -313,7 +313,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      use_activation_code: {
+        Args: { p_business_id: string; p_code: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
