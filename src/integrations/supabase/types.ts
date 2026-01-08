@@ -254,6 +254,7 @@ export type Database = {
       }
       subscriptions: {
         Row: {
+          activation_code: string | null
           amount: number
           business_id: string
           created_at: string
@@ -264,9 +265,11 @@ export type Database = {
           plan_id: string
           started_at: string | null
           status: string
+          trial_ends_at: string | null
           updated_at: string
         }
         Insert: {
+          activation_code?: string | null
           amount: number
           business_id: string
           created_at?: string
@@ -277,9 +280,11 @@ export type Database = {
           plan_id: string
           started_at?: string | null
           status?: string
+          trial_ends_at?: string | null
           updated_at?: string
         }
         Update: {
+          activation_code?: string | null
           amount?: number
           business_id?: string
           created_at?: string
@@ -290,6 +295,7 @@ export type Database = {
           plan_id?: string
           started_at?: string | null
           status?: string
+          trial_ends_at?: string | null
           updated_at?: string
         }
         Relationships: [

@@ -16,6 +16,7 @@ import NewSale from "@/pages/NewSale";
 import Customers from "@/pages/Customers";
 import Settings from "@/pages/Settings";
 import Subscription from "@/pages/Subscription";
+import Catalogue from "@/pages/Catalogue";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
           <BusinessProvider>
             <Routes>
               <Route path="/auth" element={<Auth />} />
+              <Route path="/catalogue" element={<Catalogue />} />
               <Route path="/" element={
                 <ProtectedRoute>
                   <Dashboard />
