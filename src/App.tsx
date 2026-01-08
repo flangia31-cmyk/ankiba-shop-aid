@@ -6,8 +6,10 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { BusinessProvider } from "@/hooks/useBusiness";
 import { SubscriptionProvider } from "@/hooks/useSubscription";
+import { RoleProvider } from "@/hooks/useRole";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import BottomNav from "@/components/BottomNav";
+import ClientNav from "@/components/ClientNav";
 import Auth from "@/pages/Auth";
 import Dashboard from "@/pages/Dashboard";
 import Products from "@/pages/Products";
@@ -18,6 +20,7 @@ import Customers from "@/pages/Customers";
 import Settings from "@/pages/Settings";
 import Subscription from "@/pages/Subscription";
 import Catalogue from "@/pages/Catalogue";
+import Admin from "@/pages/Admin";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,57 +34,65 @@ const App = () => (
         <AuthProvider>
           <BusinessProvider>
             <SubscriptionProvider>
-              <Routes>
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/catalogue" element={<Catalogue />} />
-                <Route path="/" element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                } />
-                <Route path="/products" element={
-                  <ProtectedRoute>
-                    <Products />
-                  </ProtectedRoute>
-                } />
-                <Route path="/products/new" element={
-                  <ProtectedRoute>
-                    <ProductForm />
-                  </ProtectedRoute>
-                } />
-                <Route path="/products/:id" element={
-                  <ProtectedRoute>
-                    <ProductForm />
-                  </ProtectedRoute>
-                } />
-                <Route path="/sales" element={
-                  <ProtectedRoute>
-                    <Sales />
-                  </ProtectedRoute>
-                } />
-                <Route path="/sales/new" element={
-                  <ProtectedRoute>
-                    <NewSale />
-                  </ProtectedRoute>
-                } />
-                <Route path="/customers" element={
-                  <ProtectedRoute>
-                    <Customers />
-                  </ProtectedRoute>
-                } />
-                <Route path="/settings" element={
-                  <ProtectedRoute>
-                    <Settings />
-                  </ProtectedRoute>
-                } />
-                <Route path="/subscription" element={
-                  <ProtectedRoute>
-                    <Subscription />
-                  </ProtectedRoute>
-                } />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-              <BottomNav />
+              <RoleProvider>
+                <Routes>
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/catalogue" element={<Catalogue />} />
+                  <Route path="/" element={
+                    <ProtectedRoute>
+                      <Dashboard />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/products" element={
+                    <ProtectedRoute>
+                      <Products />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/products/new" element={
+                    <ProtectedRoute>
+                      <ProductForm />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/products/:id" element={
+                    <ProtectedRoute>
+                      <ProductForm />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/sales" element={
+                    <ProtectedRoute>
+                      <Sales />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/sales/new" element={
+                    <ProtectedRoute>
+                      <NewSale />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/customers" element={
+                    <ProtectedRoute>
+                      <Customers />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/settings" element={
+                    <ProtectedRoute>
+                      <Settings />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/subscription" element={
+                    <ProtectedRoute>
+                      <Subscription />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/admin" element={
+                    <ProtectedRoute>
+                      <Admin />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+                <BottomNav />
+                <ClientNav />
+              </RoleProvider>
             </SubscriptionProvider>
           </BusinessProvider>
         </AuthProvider>
