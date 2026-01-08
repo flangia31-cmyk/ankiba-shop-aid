@@ -3,8 +3,5 @@ project_id = "lkcjxuiysqxhwwrchabv"
 [functions.kartapay-auth]
 verify_jwt = false
 
-[functions.kartapay-checkout]
-verify_jwt = false
-
-[functions.kartapay-webhook]
+[functions.activate-subscription]
 verify_jwt = false
