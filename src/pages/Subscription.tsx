@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Clock, CheckCircle, AlertCircle, Loader2, Key } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,53 +7,15 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useBusiness } from '@/hooks/useBusiness';
-
-interface Subscription {
-  id: string;
-  status: string;
-  plan_id: string;
-  trial_ends_at: string | null;
-  expires_at: string | null;
-  started_at: string | null;
-}
+import { useSubscription } from '@/hooks/useSubscription';
 
 export default function Subscription() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { business } = useBusiness();
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { subscription, loading, isActive, isTrialExpired, trialDaysRemaining, refetch } = useSubscription();
   const [activating, setActivating] = useState(false);
   const [activationCode, setActivationCode] = useState('');
-
-  useEffect(() => {
-    if (business) {
-      fetchSubscription();
-    }
-  }, [business]);
-
-  const fetchSubscription = async () => {
-    if (!business) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('business_id', business.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching subscription:', error);
-      }
-      setSubscription(data);
-    } catch (error) {
-      console.error('Error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleActivate = async () => {
     if (!business || !activationCode.trim()) {
@@ -84,7 +46,7 @@ export default function Subscription() {
       });
       
       setActivationCode('');
-      fetchSubscription();
+      await refetch();
     } catch (error: any) {
       console.error('Activation error:', error);
       toast({
@@ -95,20 +57,6 @@ export default function Subscription() {
     } finally {
       setActivating(false);
     }
-  };
-
-  const getTrialDaysRemaining = () => {
-    if (!subscription?.trial_ends_at) return 0;
-    const trialEnd = new Date(subscription.trial_ends_at);
-    const now = new Date();
-    const diffTime = trialEnd.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return Math.max(0, diffDays);
-  };
-
-  const isTrialExpired = () => {
-    if (!subscription?.trial_ends_at) return false;
-    return new Date(subscription.trial_ends_at) < new Date();
   };
 
   const formatDate = (dateString: string | null) => {
@@ -127,10 +75,6 @@ export default function Subscription() {
       </div>
     );
   }
-
-  const trialDaysRemaining = getTrialDaysRemaining();
-  const trialExpired = isTrialExpired();
-  const isActive = subscription?.status === 'active';
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -153,7 +97,7 @@ export default function Subscription() {
             <CardTitle className="flex items-center gap-2">
               {isActive ? (
                 <CheckCircle className="h-5 w-5 text-green-500" />
-              ) : trialExpired ? (
+              ) : isTrialExpired ? (
                 <AlertCircle className="h-5 w-5 text-destructive" />
               ) : (
                 <Clock className="h-5 w-5 text-primary" />
@@ -162,7 +106,7 @@ export default function Subscription() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {isActive ? (
+            {isActive && subscription?.status === 'active' ? (
               <div className="space-y-2">
                 <p className="text-lg font-semibold text-green-600">Abonnement actif</p>
                 <p className="text-sm text-muted-foreground">
@@ -171,7 +115,7 @@ export default function Subscription() {
               </div>
             ) : subscription?.status === 'trial' ? (
               <div className="space-y-2">
-                {trialExpired ? (
+                {isTrialExpired ? (
                   <>
                     <p className="text-lg font-semibold text-destructive">Période d'essai expirée</p>
                     <p className="text-sm text-muted-foreground">
@@ -276,7 +220,7 @@ export default function Subscription() {
         )}
 
         {/* Active subscription info */}
-        {isActive && (
+        {isActive && subscription?.status === 'active' && (
           <Card className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900">
             <CardContent className="pt-6">
               <div className="text-center space-y-2">
@@ -285,6 +229,9 @@ export default function Subscription() {
                 <p className="text-sm text-muted-foreground">
                   Vous avez accès à toutes les fonctionnalités jusqu'au {formatDate(subscription?.expires_at)}.
                 </p>
+                <Button onClick={() => navigate('/')} className="mt-4">
+                  Aller au tableau de bord
+                </Button>
               </div>
             </CardContent>
           </Card>

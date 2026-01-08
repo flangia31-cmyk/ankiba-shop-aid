@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Store, Mail, Lock, Building2, Loader2 } from 'lucide-react';
+import { Store, Mail, Lock, Building2, Loader2, ShoppingBag } from 'lucide-react';
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -70,7 +70,7 @@ export default function Auth() {
         } else {
           toast({
             title: "Compte créé !",
-            description: "Votre boutique est prête",
+            description: "Votre boutique est prête. Vous avez 1 mois d'essai gratuit !",
           });
           navigate('/');
         }
@@ -102,16 +102,39 @@ export default function Auth() {
           </div>
         </div>
 
+        {/* Client Catalogue Link */}
+        <Card className="bg-muted/50 border-dashed">
+          <CardContent className="p-4">
+            <Link 
+              to="/catalogue" 
+              className="flex items-center justify-between group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <ShoppingBag className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-medium text-foreground">Vous êtes un client ?</p>
+                  <p className="text-sm text-muted-foreground">Parcourez le catalogue des produits</p>
+                </div>
+              </div>
+              <Button variant="ghost" size="sm" className="group-hover:translate-x-1 transition-transform">
+                →
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
         {/* Auth Card */}
         <Card className="border-0 shadow-xl">
           <CardHeader className="text-center pb-4">
             <CardTitle className="text-xl">
-              {isLogin ? "Connexion" : "Créer un compte"}
+              {isLogin ? "Espace Commerçant" : "Créer un compte"}
             </CardTitle>
             <CardDescription>
               {isLogin 
                 ? "Connectez-vous à votre boutique" 
-                : "Inscrivez votre boutique gratuitement"
+                : "1 mois d'essai gratuit inclus !"
               }
             </CardDescription>
           </CardHeader>

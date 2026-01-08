@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { BusinessProvider } from "@/hooks/useBusiness";
+import { SubscriptionProvider } from "@/hooks/useSubscription";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import BottomNav from "@/components/BottomNav";
 import Auth from "@/pages/Auth";
@@ -29,57 +30,59 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <BusinessProvider>
-            <Routes>
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/catalogue" element={<Catalogue />} />
-              <Route path="/" element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/products" element={
-                <ProtectedRoute>
-                  <Products />
-                </ProtectedRoute>
-              } />
-              <Route path="/products/new" element={
-                <ProtectedRoute>
-                  <ProductForm />
-                </ProtectedRoute>
-              } />
-              <Route path="/products/:id" element={
-                <ProtectedRoute>
-                  <ProductForm />
-                </ProtectedRoute>
-              } />
-              <Route path="/sales" element={
-                <ProtectedRoute>
-                  <Sales />
-                </ProtectedRoute>
-              } />
-              <Route path="/sales/new" element={
-                <ProtectedRoute>
-                  <NewSale />
-                </ProtectedRoute>
-              } />
-              <Route path="/customers" element={
-                <ProtectedRoute>
-                  <Customers />
-                </ProtectedRoute>
-              } />
-              <Route path="/settings" element={
-                <ProtectedRoute>
-                  <Settings />
-                </ProtectedRoute>
-              } />
-              <Route path="/subscription" element={
-                <ProtectedRoute>
-                  <Subscription />
-                </ProtectedRoute>
-              } />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <BottomNav />
+            <SubscriptionProvider>
+              <Routes>
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/catalogue" element={<Catalogue />} />
+                <Route path="/" element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="/products" element={
+                  <ProtectedRoute>
+                    <Products />
+                  </ProtectedRoute>
+                } />
+                <Route path="/products/new" element={
+                  <ProtectedRoute>
+                    <ProductForm />
+                  </ProtectedRoute>
+                } />
+                <Route path="/products/:id" element={
+                  <ProtectedRoute>
+                    <ProductForm />
+                  </ProtectedRoute>
+                } />
+                <Route path="/sales" element={
+                  <ProtectedRoute>
+                    <Sales />
+                  </ProtectedRoute>
+                } />
+                <Route path="/sales/new" element={
+                  <ProtectedRoute>
+                    <NewSale />
+                  </ProtectedRoute>
+                } />
+                <Route path="/customers" element={
+                  <ProtectedRoute>
+                    <Customers />
+                  </ProtectedRoute>
+                } />
+                <Route path="/settings" element={
+                  <ProtectedRoute>
+                    <Settings />
+                  </ProtectedRoute>
+                } />
+                <Route path="/subscription" element={
+                  <ProtectedRoute>
+                    <Subscription />
+                  </ProtectedRoute>
+                } />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+              <BottomNav />
+            </SubscriptionProvider>
           </BusinessProvider>
         </AuthProvider>
       </BrowserRouter>
