@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useBusiness } from '@/hooks/useBusiness';
 import { useSubscription } from '@/hooks/useSubscription';
 import { Loader2 } from 'lucide-react';
 
@@ -9,6 +10,7 @@ interface ProtectedRouteProps {
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, loading: authLoading } = useAuth();
+  const { business, loading: businessLoading } = useBusiness();
   const { isActive, loading: subLoading } = useSubscription();
   const location = useLocation();
 
@@ -16,7 +18,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const allowedWithoutSubscription = ['/subscription', '/settings'];
   const isAllowedPage = allowedWithoutSubscription.includes(location.pathname);
 
-  if (authLoading || subLoading) {
+  if (authLoading || businessLoading || subLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -26,6 +28,11 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // If no business yet, allow access (they might be setting up)
+  if (!business) {
+    return <>{children}</>;
   }
 
   // If subscription is not active and trying to access restricted pages
