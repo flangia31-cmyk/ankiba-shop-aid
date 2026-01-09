@@ -140,8 +140,8 @@ export default function Subscription() {
           </CardContent>
         </Card>
 
-        {/* Pricing Card - Show when not active */}
-        {!isActive && (
+        {/* Pricing Card - Show when not active or during trial */}
+        {(subscription?.status !== 'active') && (
           <Card className="border-primary">
             <CardHeader>
               <CardTitle className="text-center text-2xl">Abonnement Annuel</CardTitle>
@@ -155,6 +155,14 @@ export default function Subscription() {
                 <span className="text-xl font-semibold text-muted-foreground"> KMF</span>
                 <p className="text-sm text-muted-foreground">par an</p>
               </div>
+
+              {subscription?.status === 'trial' && !isTrialExpired && (
+                <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 rounded-lg p-3">
+                  <p className="text-sm text-blue-700 dark:text-blue-300 text-center">
+                    ✨ Activez maintenant et bénéficiez de <span className="font-bold">{trialDaysRemaining} jours</span> supplémentaires ajoutés à votre abonnement !
+                  </p>
+                </div>
+              )}
 
               <div className="bg-muted/50 rounded-lg p-4 space-y-2">
                 <h4 className="font-semibold">Comment activer votre compte :</h4>
@@ -182,8 +190,8 @@ export default function Subscription() {
           </Card>
         )}
 
-        {/* Activation Code Card */}
-        {!isActive && (
+        {/* Activation Code Card - Show when not active or during trial */}
+        {(subscription?.status !== 'active') && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -191,14 +199,17 @@ export default function Subscription() {
                 Activer avec un code
               </CardTitle>
               <CardDescription>
-                Entrez le code d'activation reçu après votre paiement
+                {subscription?.status === 'trial' && !isTrialExpired 
+                  ? "Activez maintenant pour ajouter 1 an à vos jours d'essai restants"
+                  : "Entrez le code d'activation reçu après votre paiement"
+                }
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <Input
                 placeholder="Entrez votre code d'activation"
                 value={activationCode}
-                onChange={(e) => setActivationCode(e.target.value)}
+                onChange={(e) => setActivationCode(e.target.value.toUpperCase())}
                 className="text-center text-lg tracking-wider"
               />
               <Button 
