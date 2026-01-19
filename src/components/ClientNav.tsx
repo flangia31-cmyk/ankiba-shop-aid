@@ -5,8 +5,8 @@ import { cn } from '@/lib/utils';
 export default function ClientNav() {
   const location = useLocation();
   
-  // Only show on catalogue page
-  if (location.pathname !== '/catalogue') {
+  // Only show on catalogue page (now also the home page)
+  if (location.pathname !== '/catalogue' && location.pathname !== '/') {
     return null;
   }
 

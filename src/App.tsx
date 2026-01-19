@@ -36,9 +36,10 @@ const App = () => (
             <SubscriptionProvider>
               <RoleProvider>
                 <Routes>
+                  <Route path="/" element={<Catalogue />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/catalogue" element={<Catalogue />} />
-                  <Route path="/" element={
+                  <Route path="/dashboard" element={
                     <ProtectedRoute>
                       <Dashboard />
                     </ProtectedRoute>

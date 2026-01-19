@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { useRole } from '@/hooks/useRole';
 
 const navItems = [
-  { path: '/', icon: Home, label: 'Accueil' },
+  { path: '/dashboard', icon: Home, label: 'Accueil' },
   { path: '/products', icon: Package, label: 'Produits' },
   { path: '/sales', icon: ShoppingCart, label: 'Ventes' },
   { path: '/customers', icon: Users, label: 'Clients' },
@@ -16,8 +16,8 @@ export default function BottomNav() {
   const navigate = useNavigate();
   const { isAdmin } = useRole();
 
-  // Don't show nav on auth page, catalogue, or when creating new sale
-  const hiddenPaths = ['/auth', '/sales/new', '/catalogue'];
+  // Don't show nav on auth page, catalogue (home), or when creating new sale
+  const hiddenPaths = ['/auth', '/sales/new', '/catalogue', '/'];
   if (hiddenPaths.includes(location.pathname)) {
     return null;
   }
@@ -31,7 +31,7 @@ export default function BottomNav() {
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto">
         {items.map(item => {
           const isActive = location.pathname === item.path || 
-            (item.path !== '/' && location.pathname.startsWith(item.path));
+            (item.path !== '/dashboard' && location.pathname.startsWith(item.path));
           
           return (
             <button
