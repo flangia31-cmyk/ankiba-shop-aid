@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Search, Filter, Package, Phone, MapPin, Store, X } from 'lucide-react';
+import { Search, Filter, Package, Phone, MapPin, Store, X, Shirt, Smartphone, Home, Utensils, Dumbbell, Sparkles, Baby, Car, BookOpen, Gift, Laptop, Watch, Headphones, Camera, Gamepad2, ShoppingBag } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Product {
@@ -33,6 +34,36 @@ interface Category {
 interface ProductWithBusiness extends Product {
   business: Business;
 }
+
+// Category icon mapping
+const categoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
+  'Vêtements': Shirt,
+  'Électronique': Smartphone,
+  'Maison': Home,
+  'Alimentation': Utensils,
+  'Sport': Dumbbell,
+  'Beauté': Sparkles,
+  'Bébé': Baby,
+  'Auto': Car,
+  'Livres': BookOpen,
+  'Cadeaux': Gift,
+  'Informatique': Laptop,
+  'Montres': Watch,
+  'Audio': Headphones,
+  'Photo': Camera,
+  'Jeux': Gamepad2,
+};
+
+const getIconForCategory = (categoryName: string) => {
+  // Try to find a matching icon
+  for (const [key, Icon] of Object.entries(categoryIcons)) {
+    if (categoryName.toLowerCase().includes(key.toLowerCase()) || 
+        key.toLowerCase().includes(categoryName.toLowerCase())) {
+      return Icon;
+    }
+  }
+  return ShoppingBag; // Default icon
+};
 
 export default function Catalogue() {
   const [products, setProducts] = useState<ProductWithBusiness[]>([]);
@@ -118,7 +149,7 @@ export default function Catalogue() {
   const uniqueCategoryNames = [...new Set(categories.map(c => c.name))];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <header className="bg-card border-b border-border p-4 sticky top-0 z-10">
         <div className="space-y-3">
@@ -147,7 +178,7 @@ export default function Catalogue() {
             />
           </div>
 
-          {/* Filters */}
+          {/* Filters dropdown */}
           {showFilters && (
             <div className="flex gap-2">
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
@@ -176,6 +207,62 @@ export default function Catalogue() {
           )}
         </div>
       </header>
+
+      {/* Visual Categories */}
+      {uniqueCategoryNames.length > 0 && (
+        <div className="bg-card border-b border-border py-4">
+          <ScrollArea className="w-full whitespace-nowrap">
+            <div className="flex gap-4 px-4">
+              {/* All category */}
+              <button
+                onClick={() => setSelectedCategory('all')}
+                className={`flex flex-col items-center gap-2 min-w-[70px] transition-all ${
+                  selectedCategory === 'all' 
+                    ? 'text-primary' 
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${
+                  selectedCategory === 'all'
+                    ? 'bg-primary text-primary-foreground shadow-lg scale-105'
+                    : 'bg-muted hover:bg-accent'
+                }`}>
+                  <Package className="h-6 w-6" />
+                </div>
+                <span className="text-xs font-medium truncate max-w-[70px]">Tout</span>
+              </button>
+
+              {/* Category buttons */}
+              {uniqueCategoryNames.map((name) => {
+                const IconComponent = getIconForCategory(name);
+                const isSelected = selectedCategory === name;
+                
+                return (
+                  <button
+                    key={name}
+                    onClick={() => setSelectedCategory(name)}
+                    className={`flex flex-col items-center gap-2 min-w-[70px] transition-all ${
+                      isSelected 
+                        ? 'text-primary' 
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${
+                      isSelected
+                        ? 'bg-primary text-primary-foreground shadow-lg scale-105'
+                        : 'bg-muted hover:bg-accent'
+                    }`}>
+                      <IconComponent className="h-6 w-6" />
+                    </div>
+                    <span className="text-xs font-medium truncate max-w-[70px]">{name}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
+        </div>
+      )}
 
       {/* Main Content */}
       <main className="p-4">
