@@ -20,7 +20,7 @@ export default function Auth() {
 
   useEffect(() => {
     if (user) {
-      navigate('/');
+      navigate('/dashboard');
     }
   }, [user, navigate]);
 
@@ -44,7 +44,7 @@ export default function Auth() {
             title: "Bienvenue !",
             description: "Connexion réussie",
           });
-          navigate('/');
+          navigate('/dashboard');
         }
       } else {
         if (!businessName.trim()) {
@@ -72,7 +72,7 @@ export default function Auth() {
             title: "Compte créé !",
             description: "Votre boutique est prête. Vous avez 1 mois d'essai gratuit !",
           });
-          navigate('/');
+          navigate('/dashboard');
         }
       }
     } catch (error) {
