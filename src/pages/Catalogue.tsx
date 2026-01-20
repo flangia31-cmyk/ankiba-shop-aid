@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
+import ProductImageGallery from '@/components/ProductImageGallery';
 
 interface Product {
   id: string;
@@ -31,8 +32,15 @@ interface Category {
   name: string;
 }
 
+interface ProductImage {
+  id: string;
+  image_url: string;
+  display_order: number;
+}
+
 interface ProductWithBusiness extends Product {
   business: Business;
+  additionalImages?: string[];
 }
 
 // Category icon mapping
@@ -98,7 +106,8 @@ export default function Catalogue() {
       // Transform the data to flatten the business relationship
       const transformedData = (data || []).map(item => ({
         ...item,
-        business: item.business as unknown as Business
+        business: item.business as unknown as Business,
+        additionalImages: [] as string[],
       }));
 
       setProducts(transformedData);
@@ -133,6 +142,22 @@ export default function Catalogue() {
     } catch (error) {
       console.error('Error:', error);
     }
+  };
+
+  const fetchProductImages = async (productId: string): Promise<string[]> => {
+    const { data } = await supabase
+      .from('product_images')
+      .select('image_url')
+      .eq('product_id', productId)
+      .order('display_order');
+    
+    return (data || []).map(img => img.image_url);
+  };
+
+  const handleProductSelect = async (product: ProductWithBusiness) => {
+    // Fetch additional images when opening product detail
+    const additionalImages = await fetchProductImages(product.id);
+    setSelectedProduct({ ...product, additionalImages });
   };
 
   const formatPrice = (price: number) => {
@@ -292,7 +317,7 @@ export default function Catalogue() {
               <Card 
                 key={product.id} 
                 className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
-                onClick={() => setSelectedProduct(product)}
+                onClick={() => handleProductSelect(product)}
               >
                 <div className="aspect-square bg-muted relative">
                   {product.image_url ? (
@@ -326,27 +351,19 @@ export default function Catalogue() {
 
       {/* Product Detail Dialog */}
       <Dialog open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{selectedProduct?.name}</DialogTitle>
           </DialogHeader>
           
           {selectedProduct && (
             <div className="space-y-4">
-              {/* Product Image */}
-              <div className="aspect-video bg-muted rounded-lg overflow-hidden">
-                {selectedProduct.image_url ? (
-                  <img
-                    src={selectedProduct.image_url}
-                    alt={selectedProduct.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Package className="h-16 w-16 text-muted-foreground" />
-                  </div>
-                )}
-              </div>
+              {/* Product Image Gallery */}
+              <ProductImageGallery
+                mainImage={selectedProduct.image_url}
+                additionalImages={selectedProduct.additionalImages || []}
+                productName={selectedProduct.name}
+              />
 
               {/* Price and Stock */}
               <div className="flex items-center justify-between">
