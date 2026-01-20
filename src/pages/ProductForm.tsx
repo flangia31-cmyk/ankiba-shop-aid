@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useBusiness } from '@/hooks/useBusiness';
@@ -25,11 +25,20 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Trash2, Loader2, Plus, Camera, X } from 'lucide-react';
+import { ArrowLeft, Trash2, Loader2, Plus } from 'lucide-react';
+import MultiImageUpload from '@/components/MultiImageUpload';
 
 interface Category {
   id: string;
   name: string;
+}
+
+interface ImageItem {
+  id: string;
+  url: string;
+  file?: File;
+  isNew?: boolean;
+  dbId?: string; // ID from product_images table
 }
 
 export default function ProductForm() {
@@ -37,7 +46,6 @@ export default function ProductForm() {
   const { id } = useParams();
   const { business } = useBusiness();
   const { toast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const isEditing = Boolean(id);
   
@@ -52,9 +60,8 @@ export default function ProductForm() {
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [uploadingImage, setUploadingImage] = useState(false);
+  const [images, setImages] = useState<ImageItem[]>([]);
+  const [originalImages, setOriginalImages] = useState<ImageItem[]>([]);
 
   useEffect(() => {
     if (business) {
@@ -102,50 +109,53 @@ export default function ProductForm() {
     setStockQuantity(String(data.stock_quantity));
     setMinStockQuantity(String(data.min_stock_quantity));
     setCategoryId(data.category_id || '');
-    setImageUrl(data.image_url);
-  };
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Check file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: "Fichier trop volumineux",
-        description: "L'image ne doit pas dépasser 5 Mo",
-        variant: "destructive"
+    // Fetch all images (main + additional)
+    const imagesList: ImageItem[] = [];
+    
+    // Add main image first
+    if (data.image_url) {
+      imagesList.push({
+        id: 'main',
+        url: data.image_url,
+        isNew: false,
       });
-      return;
     }
 
-    setImageFile(file);
-    // Create preview
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImageUrl(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    // Fetch additional images from product_images table
+    const { data: additionalImages } = await supabase
+      .from('product_images')
+      .select('*')
+      .eq('product_id', id)
+      .order('display_order');
+
+    if (additionalImages) {
+      additionalImages.forEach((img) => {
+        imagesList.push({
+          id: img.id,
+          url: img.image_url,
+          isNew: false,
+          dbId: img.id,
+        });
+      });
+    }
+
+    setImages(imagesList);
+    setOriginalImages(imagesList);
   };
 
-  const uploadImage = async (): Promise<string | null> => {
-    if (!imageFile || !business) return imageUrl;
+  const uploadImage = async (file: File): Promise<string | null> => {
+    if (!business) return null;
 
-    setUploadingImage(true);
-    const fileExt = imageFile.name.split('.').pop();
-    const fileName = `${business.id}/${Date.now()}.${fileExt}`;
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${business.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
     const { error: uploadError } = await supabase.storage
       .from('product-images')
-      .upload(fileName, imageFile);
+      .upload(fileName, file);
 
     if (uploadError) {
-      toast({
-        title: "Erreur d'upload",
-        description: "Impossible de télécharger l'image",
-        variant: "destructive"
-      });
-      setUploadingImage(false);
+      console.error('Upload error:', uploadError);
       return null;
     }
 
@@ -153,16 +163,7 @@ export default function ProductForm() {
       .from('product-images')
       .getPublicUrl(fileName);
 
-    setUploadingImage(false);
     return publicUrl;
-  };
-
-  const removeImage = () => {
-    setImageUrl(null);
-    setImageFile(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
   };
 
   const handleAddCategory = async () => {
@@ -202,58 +203,142 @@ export default function ProductForm() {
 
     setLoading(true);
 
-    // Upload image if there's a new one
-    let finalImageUrl = imageUrl;
-    if (imageFile) {
-      finalImageUrl = await uploadImage();
-      if (finalImageUrl === null && imageFile) {
-        setLoading(false);
-        return; // Upload failed
+    try {
+      // Upload new images
+      const uploadedImages: { index: number; url: string }[] = [];
+      
+      for (let i = 0; i < images.length; i++) {
+        const img = images[i];
+        if (img.isNew && img.file) {
+          const url = await uploadImage(img.file);
+          if (url) {
+            uploadedImages.push({ index: i, url });
+          } else {
+            toast({
+              title: "Erreur d'upload",
+              description: `Impossible de télécharger l'image ${i + 1}`,
+              variant: "destructive"
+            });
+            setLoading(false);
+            return;
+          }
+        }
       }
-    }
 
-    const productData = {
-      business_id: business.id,
-      name: name.trim(),
-      purchase_price: parseFloat(purchasePrice) || 0,
-      selling_price: parseFloat(sellingPrice) || 0,
-      stock_quantity: parseInt(stockQuantity) || 0,
-      min_stock_quantity: parseInt(minStockQuantity) || 5,
-      category_id: categoryId || null,
-      image_url: finalImageUrl
-    };
+      // Update images array with uploaded URLs
+      const finalImages = images.map((img, index) => {
+        const uploaded = uploadedImages.find(u => u.index === index);
+        if (uploaded) {
+          return { ...img, url: uploaded.url };
+        }
+        return img;
+      });
 
-    let error;
+      // First image is the main image
+      const mainImageUrl = finalImages.length > 0 ? finalImages[0].url : null;
 
-    if (isEditing) {
-      const result = await supabase
-        .from('products')
-        .update(productData)
-        .eq('id', id);
-      error = result.error;
-    } else {
-      const result = await supabase
-        .from('products')
-        .insert(productData);
-      error = result.error;
-    }
+      const productData = {
+        business_id: business.id,
+        name: name.trim(),
+        purchase_price: parseFloat(purchasePrice) || 0,
+        selling_price: parseFloat(sellingPrice) || 0,
+        stock_quantity: parseInt(stockQuantity) || 0,
+        min_stock_quantity: parseInt(minStockQuantity) || 5,
+        category_id: categoryId || null,
+        image_url: mainImageUrl
+      };
 
-    setLoading(false);
+      let productId = id;
+      let error;
 
-    if (error) {
+      if (isEditing) {
+        const result = await supabase
+          .from('products')
+          .update(productData)
+          .eq('id', id);
+        error = result.error;
+      } else {
+        const result = await supabase
+          .from('products')
+          .insert(productData)
+          .select()
+          .single();
+        error = result.error;
+        productId = result.data?.id;
+      }
+
+      if (error || !productId) {
+        toast({
+          title: "Erreur",
+          description: "Impossible de sauvegarder le produit",
+          variant: "destructive"
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Handle additional images (index 1 and above)
+      const additionalImages = finalImages.slice(1);
+
+      // Delete removed images from database
+      const originalDbIds = originalImages
+        .filter(img => img.dbId)
+        .map(img => img.dbId);
+      
+      const currentDbIds = additionalImages
+        .filter(img => img.dbId)
+        .map(img => img.dbId);
+
+      const idsToDelete = originalDbIds.filter(
+        dbId => dbId && !currentDbIds.includes(dbId)
+      );
+
+      if (idsToDelete.length > 0) {
+        await supabase
+          .from('product_images')
+          .delete()
+          .in('id', idsToDelete);
+      }
+
+      // Insert new additional images
+      const newAdditionalImages = additionalImages.filter(img => img.isNew);
+      
+      if (newAdditionalImages.length > 0) {
+        const imagesToInsert = newAdditionalImages.map((img, index) => ({
+          product_id: productId,
+          image_url: img.url,
+          display_order: currentDbIds.length + index,
+        }));
+
+        await supabase.from('product_images').insert(imagesToInsert);
+      }
+
+      // Update display order for existing images
+      for (let i = 0; i < additionalImages.length; i++) {
+        const img = additionalImages[i];
+        if (img.dbId) {
+          await supabase
+            .from('product_images')
+            .update({ display_order: i })
+            .eq('id', img.dbId);
+        }
+      }
+
+      toast({
+        title: isEditing ? "Produit modifié" : "Produit ajouté",
+        description: `${name} a été ${isEditing ? 'modifié' : 'ajouté'}`
+      });
+      navigate('/products');
+    } catch (err) {
+      console.error('Submit error:', err);
       toast({
         title: "Erreur",
-        description: "Impossible de sauvegarder le produit",
+        description: "Une erreur est survenue",
         variant: "destructive"
       });
-      return;
+    } finally {
+      setLoading(false);
     }
-
-    toast({
-      title: isEditing ? "Produit modifié" : "Produit ajouté",
-      description: `${name} a été ${isEditing ? 'modifié' : 'ajouté'}`
-    });
-    navigate('/products');
   };
 
   const handleDelete = async () => {
@@ -300,45 +385,14 @@ export default function ProductForm() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <Card className="border-0 shadow-md">
           <CardContent className="p-4 space-y-4">
-            {/* Image Upload */}
+            {/* Multi Image Upload */}
             <div className="space-y-2">
-              <Label className="text-base">Photo du produit</Label>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                onChange={handleImageSelect}
-                className="hidden"
+              <Label className="text-base">Photos du produit</Label>
+              <MultiImageUpload 
+                images={images} 
+                onImagesChange={setImages}
+                maxImages={5}
               />
-              {imageUrl ? (
-                <div className="relative w-full h-48 rounded-lg overflow-hidden bg-muted">
-                  <img
-                    src={imageUrl}
-                    alt="Aperçu"
-                    className="w-full h-full object-cover"
-                  />
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="icon"
-                    className="absolute top-2 right-2"
-                    onClick={removeImage}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              ) : (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full h-32 border-dashed border-2 flex flex-col gap-2"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Camera className="w-8 h-8 text-muted-foreground" />
-                  <span className="text-muted-foreground">Ajouter une photo</span>
-                </Button>
-              )}
             </div>
 
             <div className="space-y-2">
