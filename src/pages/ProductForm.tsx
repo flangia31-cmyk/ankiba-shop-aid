@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -25,7 +26,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Trash2, Loader2, Plus } from 'lucide-react';
+import { ArrowLeft, Trash2, Loader2, Plus, Eye, EyeOff } from 'lucide-react';
 import MultiImageUpload from '@/components/MultiImageUpload';
 
 interface Category {
@@ -62,6 +63,7 @@ export default function ProductForm() {
   const [deleting, setDeleting] = useState(false);
   const [images, setImages] = useState<ImageItem[]>([]);
   const [originalImages, setOriginalImages] = useState<ImageItem[]>([]);
+  const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
     if (business) {
@@ -109,6 +111,7 @@ export default function ProductForm() {
     setStockQuantity(String(data.stock_quantity));
     setMinStockQuantity(String(data.min_stock_quantity));
     setCategoryId(data.category_id || '');
+    setIsVisible(data.is_visible ?? true);
 
     // Fetch all images (main + additional)
     const imagesList: ImageItem[] = [];
@@ -245,7 +248,8 @@ export default function ProductForm() {
         stock_quantity: parseInt(stockQuantity) || 0,
         min_stock_quantity: parseInt(minStockQuantity) || 5,
         category_id: categoryId || null,
-        image_url: mainImageUrl
+        image_url: mainImageUrl,
+        is_visible: isVisible
       };
 
       let productId = id;
@@ -509,6 +513,33 @@ export default function ProductForm() {
                   min="0"
                 />
               </div>
+            </div>
+
+            {/* Visibility Toggle */}
+            <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+              <div className="flex items-center gap-3">
+                {isVisible ? (
+                  <Eye className="h-5 w-5 text-green-600" />
+                ) : (
+                  <EyeOff className="h-5 w-5 text-muted-foreground" />
+                )}
+                <div>
+                  <Label htmlFor="visibility" className="text-base font-medium cursor-pointer">
+                    Visible dans le catalogue
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    {isVisible 
+                      ? "Ce produit est visible par les clients" 
+                      : "Ce produit est masqué du catalogue"
+                    }
+                  </p>
+                </div>
+              </div>
+              <Switch
+                id="visibility"
+                checked={isVisible}
+                onCheckedChange={setIsVisible}
+              />
             </div>
           </CardContent>
         </Card>
