@@ -9,7 +9,10 @@ import {
   Package, 
   AlertTriangle, 
   Plus,
-  ShoppingCart
+  ShoppingCart,
+  DollarSign,
+  BarChart3,
+  Wallet
 } from 'lucide-react';
 
 interface DashboardStats {
@@ -17,6 +20,10 @@ interface DashboardStats {
   todayAmount: number;
   lowStockCount: number;
   totalProducts: number;
+  // Lifetime stats
+  totalSalesCount: number;
+  totalSalesAmount: number;
+  totalMargin: number;
 }
 
 export default function Dashboard() {
@@ -26,7 +33,10 @@ export default function Dashboard() {
     todaySales: 0,
     todayAmount: 0,
     lowStockCount: 0,
-    totalProducts: 0
+    totalProducts: 0,
+    totalSalesCount: 0,
+    totalSalesAmount: 0,
+    totalMargin: 0
   });
   const [loading, setLoading] = useState(true);
 
@@ -43,14 +53,55 @@ export default function Dashboard() {
     today.setHours(0, 0, 0, 0);
 
     // Fetch today's sales
-    const { data: salesData } = await supabase
+    const { data: todaySalesData } = await supabase
       .from('sales')
       .select('total_amount')
       .eq('business_id', business.id)
       .gte('created_at', today.toISOString());
 
-    const todaySales = salesData?.length || 0;
-    const todayAmount = salesData?.reduce((sum, sale) => sum + Number(sale.total_amount), 0) || 0;
+    const todaySales = todaySalesData?.length || 0;
+    const todayAmount = todaySalesData?.reduce((sum, sale) => sum + Number(sale.total_amount), 0) || 0;
+
+    // Fetch ALL sales (lifetime)
+    const { data: allSalesData } = await supabase
+      .from('sales')
+      .select('id, total_amount')
+      .eq('business_id', business.id);
+
+    const totalSalesCount = allSalesData?.length || 0;
+    const totalSalesAmount = allSalesData?.reduce((sum, sale) => sum + Number(sale.total_amount), 0) || 0;
+
+    // Calculate total margin from all sale_items
+    let totalMargin = 0;
+    if (allSalesData && allSalesData.length > 0) {
+      const saleIds = allSalesData.map(s => s.id);
+      
+      // Get all sale items with product info
+      const { data: saleItemsData } = await supabase
+        .from('sale_items')
+        .select('quantity, unit_price, product_id')
+        .in('sale_id', saleIds);
+
+      if (saleItemsData && saleItemsData.length > 0) {
+        // Get all products to know purchase prices
+        const productIds = [...new Set(saleItemsData.map(item => item.product_id))];
+        const { data: productsData } = await supabase
+          .from('products')
+          .select('id, purchase_price')
+          .in('id', productIds);
+
+        const productPriceMap = new Map(
+          productsData?.map(p => [p.id, Number(p.purchase_price)]) || []
+        );
+
+        // Calculate margin: (selling_price - purchase_price) * quantity
+        totalMargin = saleItemsData.reduce((sum, item) => {
+          const purchasePrice = productPriceMap.get(item.product_id) || 0;
+          const margin = (Number(item.unit_price) - purchasePrice) * item.quantity;
+          return sum + margin;
+        }, 0);
+      }
+    }
 
     // Fetch products stats
     const { data: productsData } = await supabase
@@ -67,7 +118,10 @@ export default function Dashboard() {
       todaySales,
       todayAmount,
       lowStockCount,
-      totalProducts
+      totalProducts,
+      totalSalesCount,
+      totalSalesAmount,
+      totalMargin
     });
     setLoading(false);
   };
@@ -177,6 +231,55 @@ export default function Dashboard() {
                 <div>
                   <p className="text-sm text-muted-foreground">Stock bas</p>
                   <p className="text-xl font-bold text-foreground">{stats.lowStockCount}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Lifetime Stats */}
+      <div className="space-y-3">
+        <h2 className="text-lg font-semibold text-foreground">Depuis la création</h2>
+        
+        <div className="grid grid-cols-1 gap-3">
+          <Card className="border-0 shadow-md bg-gradient-to-r from-primary/10 to-primary/5">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-xl bg-primary/20 flex items-center justify-center">
+                  <BarChart3 className="w-7 h-7 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground">Total des ventes</p>
+                  <p className="text-2xl font-bold text-foreground">{stats.totalSalesCount}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-md bg-gradient-to-r from-success/10 to-success/5">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-xl bg-success/20 flex items-center justify-center">
+                  <Wallet className="w-7 h-7 text-success" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground">Chiffre d'affaires total</p>
+                  <p className="text-2xl font-bold text-foreground">{formatPrice(stats.totalSalesAmount)}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-md bg-gradient-to-r from-accent/10 to-accent/5">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-xl bg-accent/20 flex items-center justify-center">
+                  <DollarSign className="w-7 h-7 text-accent-foreground" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground">Marge totale (bénéfice)</p>
+                  <p className="text-2xl font-bold text-foreground">{formatPrice(stats.totalMargin)}</p>
                 </div>
               </div>
             </CardContent>
