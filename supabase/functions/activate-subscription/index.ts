@@ -110,9 +110,10 @@ Deno.serve(async (req) => {
       }
     }
     
-    // Add 1 year to the base date
+    // Calculate expiration based on code duration
+    const durationMonths = codeData.duration_months || 12;
     const expiresAt = new Date(baseDate)
-    expiresAt.setFullYear(expiresAt.getFullYear() + 1)
+    expiresAt.setMonth(expiresAt.getMonth() + durationMonths)
 
     // Mark code as used
     const { error: updateCodeError } = await supabaseAdmin
@@ -128,14 +129,14 @@ Deno.serve(async (req) => {
       console.error('Error marking code as used:', updateCodeError)
     }
 
-    // Update subscription
+    // Update subscription with amount from code
     const { error: updateError } = await supabaseAdmin
       .from('subscriptions')
       .update({
         status: 'active',
-        plan_id: 'annual',
-        amount: 5000,
-        currency: 'KMF',
+        plan_id: durationMonths === 1 ? 'monthly' : 'annual',
+        amount: codeData.amount || 10000,
+        currency: 'FC',
         started_at: now.toISOString(),
         expires_at: expiresAt.toISOString(),
         updated_at: now.toISOString(),
@@ -150,13 +151,15 @@ Deno.serve(async (req) => {
       )
     }
 
+    const durationText = durationMonths === 1 ? '1 mois' : '1 an';
     console.log('Subscription activated successfully:', subscription.id, 'expires:', expiresAt.toISOString())
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'Abonnement activé avec succès',
-        expires_at: expiresAt.toISOString()
+        message: `Abonnement activé avec succès pour ${durationText}`,
+        expires_at: expiresAt.toISOString(),
+        duration_months: durationMonths
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )

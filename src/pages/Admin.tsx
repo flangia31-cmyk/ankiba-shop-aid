@@ -2,9 +2,15 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Trash2, Copy, Check, Shield, Users, Key, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useRole } from '@/hooks/useRole';
@@ -17,6 +23,8 @@ interface ActivationCode {
   used_at: string | null;
   created_at: string;
   expires_at: string | null;
+  amount: number;
+  duration_months: number;
 }
 
 interface Business {
@@ -43,6 +51,7 @@ export default function Admin() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('annual');
 
   useEffect(() => {
     if (!roleLoading && !isAdmin) {
@@ -83,12 +92,18 @@ export default function Admin() {
     return code;
   };
 
-  const createCode = async () => {
+  const createCode = async (planType: 'monthly' | 'annual') => {
     const code = generateCode();
+    const amount = planType === 'monthly' ? 1000 : 10000;
+    const durationMonths = planType === 'monthly' ? 1 : 12;
     
     const { error } = await supabase
       .from('activation_codes' as any)
-      .insert({ code });
+      .insert({ 
+        code,
+        amount,
+        duration_months: durationMonths
+      });
 
     if (error) {
       toast({
@@ -101,7 +116,7 @@ export default function Admin() {
 
     toast({
       title: "Code créé",
-      description: `Le code ${code} a été créé`
+      description: `Code ${planType === 'monthly' ? 'mensuel' : 'annuel'} (${amount} FC) créé`
     });
     
     fetchData();
@@ -207,12 +222,23 @@ export default function Admin() {
 
         {/* Activation Codes */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader className="flex flex-row items-center justify-between gap-2">
             <CardTitle className="text-lg">Codes d'activation</CardTitle>
-            <Button size="sm" onClick={createCode}>
-              <Plus className="h-4 w-4 mr-1" />
-              Nouveau
-            </Button>
+            <div className="flex items-center gap-2">
+              <Select value={selectedPlan} onValueChange={(v) => setSelectedPlan(v as 'monthly' | 'annual')}>
+                <SelectTrigger className="w-[130px] h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="monthly">1 000 FC/mois</SelectItem>
+                  <SelectItem value="annual">10 000 FC/an</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button size="sm" onClick={() => createCode(selectedPlan)}>
+                <Plus className="h-4 w-4 mr-1" />
+                Créer
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-3">
             {codes.length === 0 ? (
@@ -246,9 +272,17 @@ export default function Admin() {
                         Utilisé par: {getBusinessName(code.used_by_business_id)}
                       </p>
                     ) : (
-                      <Badge variant="outline" className="mt-1 text-xs">
-                        Disponible
-                      </Badge>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="outline" className="text-xs">
+                          Disponible
+                        </Badge>
+                        <Badge 
+                          variant="secondary" 
+                          className="text-xs"
+                        >
+                          {code.amount?.toLocaleString() || '10 000'} FC / {code.duration_months === 1 ? '1 mois' : '1 an'}
+                        </Badge>
+                      </div>
                     )}
                   </div>
                   {!code.is_used && (
