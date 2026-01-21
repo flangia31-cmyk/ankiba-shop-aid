@@ -88,6 +88,7 @@ export default function Catalogue() {
           *,
           business:businesses(id, name, phone, address)
         `)
+        .eq('is_visible', true)
         .gt('stock_quantity', 0)
         .order('created_at', { ascending: false });
 

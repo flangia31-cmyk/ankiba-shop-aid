@@ -188,6 +188,7 @@ export type Database = {
           created_at: string
           id: string
           image_url: string | null
+          is_visible: boolean
           min_stock_quantity: number
           name: string
           purchase_price: number
@@ -201,6 +202,7 @@ export type Database = {
           created_at?: string
           id?: string
           image_url?: string | null
+          is_visible?: boolean
           min_stock_quantity?: number
           name: string
           purchase_price?: number
@@ -214,6 +216,7 @@ export type Database = {
           created_at?: string
           id?: string
           image_url?: string | null
+          is_visible?: boolean
           min_stock_quantity?: number
           name?: string
           purchase_price?: number

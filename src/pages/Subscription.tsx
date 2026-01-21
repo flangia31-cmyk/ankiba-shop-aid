@@ -144,16 +144,25 @@ export default function Subscription() {
         {(subscription?.status !== 'active') && (
           <Card className="border-primary">
             <CardHeader>
-              <CardTitle className="text-center text-2xl">Abonnement Annuel</CardTitle>
+              <CardTitle className="text-center text-2xl">Abonnement Ankiba Business</CardTitle>
               <CardDescription className="text-center">
                 Accès complet à toutes les fonctionnalités
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="text-center">
-                <span className="text-4xl font-bold">5 000</span>
-                <span className="text-xl font-semibold text-muted-foreground"> KMF</span>
-                <p className="text-sm text-muted-foreground">par an</p>
+              <div className="flex justify-center gap-6">
+                <div className="text-center">
+                  <span className="text-3xl font-bold">1 000</span>
+                  <span className="text-lg font-semibold text-muted-foreground"> FC</span>
+                  <p className="text-sm text-muted-foreground">par mois</p>
+                </div>
+                <div className="border-l border-border"></div>
+                <div className="text-center">
+                  <span className="text-3xl font-bold">10 000</span>
+                  <span className="text-lg font-semibold text-muted-foreground"> FC</span>
+                  <p className="text-sm text-muted-foreground">par an</p>
+                  <p className="text-xs text-green-600 font-medium">2 mois offerts</p>
+                </div>
               </div>
 
               {subscription?.status === 'trial' && !isTrialExpired && (
@@ -167,7 +176,7 @@ export default function Subscription() {
               <div className="bg-muted/50 rounded-lg p-4 space-y-2">
                 <h4 className="font-semibold">Comment activer votre compte :</h4>
                 <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
-                  <li>Effectuez un paiement de 5 000 KMF</li>
+                  <li>Effectuez un paiement (1 000 FC/mois ou 10 000 FC/an)</li>
                   <li>Contactez-nous pour recevoir votre code d'activation</li>
                   <li>Entrez le code ci-dessous pour activer votre compte</li>
                 </ol>
@@ -176,15 +185,14 @@ export default function Subscription() {
               <div className="bg-card border border-border rounded-lg p-4 space-y-3">
                 <h4 className="font-semibold flex items-center gap-2">
                   <Key className="h-4 w-4" />
-                  Informations de paiement
+                  Fonctionnalités incluses
                 </h4>
-                <div className="text-sm space-y-1">
-                  <p><span className="font-medium">Montant:</span> 5 000 KMF</p>
-                  <p><span className="font-medium">Durée:</span> 1 an</p>
-                  <p className="text-muted-foreground mt-2">
-                    Après paiement, vous recevrez un code d'activation pour activer votre compte commerçant.
-                  </p>
-                </div>
+                <ul className="text-sm space-y-1 text-muted-foreground">
+                  <li>✓ Gestion complète des produits</li>
+                  <li>✓ Suivi des ventes et marges</li>
+                  <li>✓ Gestion des clients</li>
+                  <li>✓ Visibilité dans le catalogue public</li>
+                </ul>
               </div>
             </CardContent>
           </Card>
