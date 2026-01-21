@@ -16,8 +16,10 @@ export type Database = {
     Tables: {
       activation_codes: {
         Row: {
+          amount: number
           code: string
           created_at: string
+          duration_months: number
           expires_at: string | null
           id: string
           is_used: boolean
@@ -25,8 +27,10 @@ export type Database = {
           used_by_business_id: string | null
         }
         Insert: {
+          amount?: number
           code: string
           created_at?: string
+          duration_months?: number
           expires_at?: string | null
           id?: string
           is_used?: boolean
@@ -34,8 +38,10 @@ export type Database = {
           used_by_business_id?: string | null
         }
         Update: {
+          amount?: number
           code?: string
           created_at?: string
+          duration_months?: number
           expires_at?: string | null
           id?: string
           is_used?: boolean
