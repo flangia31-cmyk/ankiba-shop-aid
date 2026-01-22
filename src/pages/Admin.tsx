@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Trash2, Copy, Check, Shield, Users, Key, ArrowLeft } from 'lucide-react';
+import { Plus, Trash2, Copy, Check, Shield, Users, Key, ArrowLeft, AlertTriangle, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Select,
   SelectContent,
@@ -161,12 +162,24 @@ export default function Admin() {
     return subscriptions.find(s => s.business_id === businessId);
   };
 
+  const getExpiringSubscriptions = () => {
+    const now = new Date();
+    const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    
+    return subscriptions.filter(sub => {
+      const expiryDate = sub.status === 'trial' ? sub.trial_ends_at : sub.expires_at;
+      if (!expiryDate) return false;
+      const expiry = new Date(expiryDate);
+      return expiry > now && expiry <= sevenDaysFromNow;
+    });
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
-        return <Badge className="bg-green-500">Actif</Badge>;
+        return <Badge className="bg-green-600 hover:bg-green-700">Actif</Badge>;
       case 'trial':
-        return <Badge className="bg-blue-500">Essai</Badge>;
+        return <Badge className="bg-blue-600 hover:bg-blue-700">Essai</Badge>;
       case 'expired':
         return <Badge variant="destructive">Expiré</Badge>;
       default:
@@ -202,6 +215,32 @@ export default function Admin() {
       </header>
 
       <main className="p-4 space-y-6">
+        {/* Expiring Subscriptions Alert */}
+        {getExpiringSubscriptions().length > 0 && (
+          <Alert variant="destructive" className="border-orange-500 bg-orange-500/10">
+            <Bell className="h-4 w-4" />
+            <AlertTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4" />
+              Abonnements expirant bientôt
+            </AlertTitle>
+            <AlertDescription className="mt-2 space-y-2">
+              {getExpiringSubscriptions().map(sub => {
+                const business = businesses.find(b => b.id === sub.business_id);
+                const expiryDate = sub.status === 'trial' ? sub.trial_ends_at : sub.expires_at;
+                const daysLeft = Math.ceil((new Date(expiryDate!).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+                return (
+                  <div key={sub.id} className="flex items-center justify-between">
+                    <span className="font-medium">{business?.name || 'Inconnu'}</span>
+                    <Badge variant="outline" className="text-orange-600 border-orange-500">
+                      {daysLeft} jour{daysLeft > 1 ? 's' : ''} restant{daysLeft > 1 ? 's' : ''}
+                    </Badge>
+                  </div>
+                );
+              })}
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Stats */}
         <div className="grid grid-cols-2 gap-4">
           <Card>
