@@ -83,13 +83,8 @@ export default function Catalogue() {
   const fetchProducts = async () => {
     try {
       const { data, error } = await supabase
-        .from('products')
-        .select(`
-          *,
-          business:businesses(id, name, phone, address)
-        `)
-        .eq('is_visible', true)
-        .gt('stock_quantity', 0)
+        .from('public_catalog' as any)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -97,9 +92,21 @@ export default function Catalogue() {
         return;
       }
 
-      const transformedData = (data || []).map(item => ({
-        ...item,
-        business: item.business as unknown as Business,
+      const transformedData = ((data || []) as any[]).map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        selling_price: item.selling_price,
+        purchase_price: 0,
+        stock_quantity: 0,
+        image_url: item.image_url,
+        category_id: item.category_id,
+        business_id: item.business_id,
+        business: {
+          id: item.business_id,
+          name: item.business_name,
+          phone: item.business_phone,
+          address: null,
+        } as Business,
         additionalImages: [] as string[],
       }));
 
@@ -114,7 +121,7 @@ export default function Catalogue() {
   const fetchCategories = async () => {
     try {
       const { data, error } = await supabase
-        .from('categories')
+        .from('public_categories' as any)
         .select('id, name')
         .order('name');
 
@@ -123,9 +130,9 @@ export default function Catalogue() {
         return;
       }
 
-      const uniqueCategories = (data || []).reduce((acc: Category[], curr) => {
+      const uniqueCategories = ((data || []) as any[]).reduce((acc: Category[], curr: any) => {
         if (!acc.find(c => c.name === curr.name)) {
-          acc.push(curr);
+          acc.push({ id: curr.id, name: curr.name });
         }
         return acc;
       }, []);
@@ -138,12 +145,12 @@ export default function Catalogue() {
 
   const fetchProductImages = async (productId: string): Promise<string[]> => {
     const { data } = await supabase
-      .from('product_images')
+      .from('public_product_images' as any)
       .select('image_url')
       .eq('product_id', productId)
       .order('display_order');
-    
-    return (data || []).map(img => img.image_url);
+
+    return ((data || []) as any[]).map((img: any) => img.image_url);
   };
 
   const handleProductSelect = async (product: ProductWithBusiness) => {
