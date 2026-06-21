@@ -185,6 +185,13 @@ export type Database = {
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "product_images_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_catalog"
+            referencedColumns: ["id"]
+          },
         ]
       }
       products: {
@@ -245,6 +252,13 @@ export type Database = {
             referencedRelation: "categories"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "public_categories"
+            referencedColumns: ["id"]
+          },
         ]
       }
       sale_items: {
@@ -278,6 +292,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_catalog"
             referencedColumns: ["id"]
           },
           {
@@ -410,7 +431,74 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_catalog: {
+        Row: {
+          business_id: string | null
+          business_name: string | null
+          business_phone: string | null
+          category_id: string | null
+          created_at: string | null
+          id: string | null
+          image_url: string | null
+          is_visible: boolean | null
+          name: string | null
+          selling_price: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "public_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      public_categories: {
+        Row: {
+          id: string | null
+          name: string | null
+        }
+        Relationships: []
+      }
+      public_product_images: {
+        Row: {
+          display_order: number | null
+          id: string | null
+          image_url: string | null
+          product_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_images_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_images_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_catalog"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       has_role: {
