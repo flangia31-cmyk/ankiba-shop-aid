@@ -183,8 +183,8 @@ export default function Catalogue() {
                 <ShoppingBag className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h1 className="text-lg font-bold text-foreground">AnkibaShop</h1>
-                <p className="text-xs text-muted-foreground -mt-0.5">Trouvez tout ici</p>
+                <h1 className="text-lg font-display font-bold tracking-tight text-foreground">AnkibaShop</h1>
+                <p className="text-[11px] text-muted-foreground -mt-0.5 uppercase tracking-widest">Marketplace premium</p>
               </div>
             </div>
             <Button variant="ghost" size="icon" className="relative">
@@ -256,25 +256,26 @@ export default function Catalogue() {
       <main className="px-4 pt-4 space-y-6">
         {/* Promo Banner */}
         {!searchQuery && selectedCategory === 'all' && (
-          <div className="relative overflow-hidden rounded-2xl gradient-primary p-5 shadow-strong">
-            <div className="relative z-10">
-              <Badge className="bg-white/20 text-white border-0 backdrop-blur-sm mb-2">
-                <Flame className="w-3 h-3 mr-1" /> Offre Spéciale
+          <div className="relative overflow-hidden rounded-3xl gradient-emerald p-6 shadow-strong">
+            <div className="relative z-10 max-w-[70%]">
+              <Badge className="bg-gold text-primary-foreground border-0 mb-3 shadow-gold">
+                <Flame className="w-3 h-3 mr-1" /> Édition limitée
               </Badge>
-              <h2 className="text-xl font-bold text-white mb-1">
-                Jusqu'à -50% sur tout
+              <h2 className="text-2xl font-display font-bold text-white leading-tight mb-2">
+                L'élégance,<br/><span className="text-gold">à prix juste.</span>
               </h2>
-              <p className="text-white/80 text-sm mb-3">
-                Découvrez nos meilleures offres du moment
+              <p className="text-white/70 text-sm mb-4">
+                Découvrez la sélection des meilleures boutiques.
               </p>
-              <Button size="sm" className="bg-white text-primary hover:bg-white/90 font-semibold">
-                Explorer
+              <Button size="sm" className="bg-gold text-primary-foreground hover:bg-gold/90 font-semibold shadow-gold">
+                Explorer la sélection
                 <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </div>
-            {/* Decorative elements */}
-            <div className="absolute -right-8 -top-8 w-32 h-32 bg-white/10 rounded-full" />
-            <div className="absolute -right-4 -bottom-12 w-24 h-24 bg-white/10 rounded-full" />
+            {/* Decorative gold rings */}
+            <div className="absolute -right-12 -top-12 w-44 h-44 rounded-full border border-gold/30" />
+            <div className="absolute -right-6 -bottom-16 w-32 h-32 rounded-full border border-gold/20" />
+            <div className="absolute right-8 top-8 w-3 h-3 rounded-full bg-gold animate-pulse" />
           </div>
         )}
 
@@ -421,65 +422,84 @@ export default function Catalogue() {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
-              {filteredProducts.map((product) => {
+            <div className="grid grid-cols-6 auto-rows-[140px] gap-3">
+              {filteredProducts.map((product, idx) => {
                 const discount = calculateDiscount(product.purchase_price * 1.5, product.selling_price);
+                // Bento pattern: every 6 items → 1 hero (3x2), 2 medium (3x1), 3 small (2x1)
+                const mod = idx % 6;
+                const span =
+                  mod === 0
+                    ? 'col-span-6 sm:col-span-3 row-span-2'
+                    : mod === 1 || mod === 2
+                    ? 'col-span-3 row-span-1'
+                    : 'col-span-2 row-span-1';
+                const isHero = mod === 0;
                 return (
-                  <Card 
-                    key={product.id} 
-                    className="overflow-hidden cursor-pointer border-0 shadow-soft hover:shadow-medium transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  <Card
+                    key={product.id}
+                    className={`group relative overflow-hidden cursor-pointer border-0 shadow-soft hover:shadow-strong transition-all duration-300 hover:-translate-y-0.5 ${span}`}
                     onClick={() => handleProductSelect(product)}
                   >
-                    <div className="aspect-square bg-muted relative overflow-hidden">
+                    <div className="absolute inset-0 bg-muted">
                       {product.image_url ? (
                         <img
                           src={product.image_url}
                           alt={product.name}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
-                          <Package className="h-12 w-12 text-muted-foreground/50" />
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-secondary to-muted">
+                          <Package className="h-10 w-10 text-muted-foreground/40" />
                         </div>
                       )}
-                      <button 
-                        className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-soft hover:bg-white transition-colors"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Heart className="w-4 h-4 text-muted-foreground hover:text-primary transition-colors" />
-                      </button>
+                    </div>
+                    {/* Gradient overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+                    {/* Badges */}
+                    <div className="absolute top-2 left-2 flex flex-col gap-1.5">
                       {discount > 0 && (
-                        <Badge className="absolute top-2 left-2 gradient-primary border-0 text-white text-xs font-semibold">
+                        <Badge className="bg-gold text-primary-foreground border-0 text-[10px] font-bold shadow-gold">
                           -{discount}%
                         </Badge>
                       )}
                       {product.stock_quantity <= 5 && (
-                        <Badge variant="secondary" className="absolute bottom-2 left-2 bg-black/70 text-white border-0 text-xs">
+                        <Badge className="bg-background/90 backdrop-blur text-foreground border-0 text-[10px]">
                           Stock limité
                         </Badge>
                       )}
                     </div>
-                    <CardContent className="p-3">
-                      <h3 className="font-medium text-sm line-clamp-2 leading-tight mb-2">{product.name}</h3>
-                      <div className="space-y-1">
-                        <p className="text-primary font-bold">{formatPrice(product.selling_price)}</p>
-                        {discount > 0 && (
-                          <p className="text-xs text-muted-foreground line-through">
-                            {formatPrice(Math.round(product.purchase_price * 1.5))}
+                    <button
+                      className="absolute top-2 right-2 w-8 h-8 rounded-full bg-background/90 backdrop-blur flex items-center justify-center shadow-soft hover:bg-background transition-colors"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Heart className="w-4 h-4 text-foreground hover:text-primary transition-colors" />
+                    </button>
+
+                    {/* Bottom info */}
+                    <div className="absolute inset-x-0 bottom-0 p-3 text-white">
+                      <h3 className={`font-semibold leading-tight line-clamp-2 ${isHero ? 'text-base font-display' : 'text-xs'}`}>
+                        {product.name}
+                      </h3>
+                      <div className="flex items-end justify-between mt-1.5">
+                        <div>
+                          <p className={`font-bold text-gold ${isHero ? 'text-lg' : 'text-sm'}`}>
+                            {formatPrice(product.selling_price)}
                           </p>
+                          {isHero && discount > 0 && (
+                            <p className="text-[11px] text-white/60 line-through">
+                              {formatPrice(Math.round(product.purchase_price * 1.5))}
+                            </p>
+                          )}
+                        </div>
+                        {isHero && (
+                          <span className="text-[10px] text-white/70 flex items-center gap-1">
+                            <Store className="h-3 w-3" />
+                            {product.business?.name?.split(' ')[0] || 'Vendeur'}
+                          </span>
                         )}
                       </div>
-                      <div className="flex items-center justify-between mt-2">
-                        <div className="flex items-center gap-1">
-                          <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                          <span className="text-xs text-muted-foreground">4.8</span>
-                        </div>
-                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                          <Store className="h-3 w-3" />
-                          {product.business?.name?.split(' ')[0] || 'Vendeur'}
-                        </span>
-                      </div>
-                    </CardContent>
+                    </div>
                   </Card>
                 );
               })}
