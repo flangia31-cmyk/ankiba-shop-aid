@@ -131,15 +131,20 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="p-4 pb-24 space-y-6">
+    <div className="p-4 pb-24 space-y-6 min-h-screen gradient-surface">
       {/* Welcome Header */}
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold text-foreground">
-          Bonjour 👋
-        </h1>
-        <p className="text-muted-foreground">
-          {business?.name || 'Ma Boutique'}
-        </p>
+      <div className="relative overflow-hidden rounded-3xl gradient-emerald p-5 shadow-strong">
+        <div className="relative z-10">
+          <p className="text-[11px] uppercase tracking-widest text-gold mb-1">Tableau de bord</p>
+          <h1 className="text-2xl font-display font-bold text-white">
+            Bonjour 👋
+          </h1>
+          <p className="text-white/70 text-sm mt-0.5">
+            {business?.name || 'Ma Boutique'}
+          </p>
+        </div>
+        <div className="absolute -right-10 -bottom-10 w-40 h-40 rounded-full border border-gold/20" />
+        <div className="absolute right-4 top-4 w-2 h-2 rounded-full bg-gold animate-pulse" />
       </div>
 
       {/* Quick Actions */}
